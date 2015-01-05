@@ -11,6 +11,8 @@ import Distribution.HaskellSuite (
     IsPackageDB(..),readDB,writeDB,MaybeInitDB(InitDB))
 import qualified Distribution.HaskellSuite.Compiler as Compiler (
     main,CompileFn,Is(..))
+import Language.Haskell.Exts.Extension (
+    knownExtensions,knownLanguages)
 
 import Distribution.Package (PackageIdentifier(pkgName),PackageName(PackageName))
 import Distribution.Simple.Compiler (PackageDB(SpecificPackageDB))
@@ -20,8 +22,6 @@ import Distribution.Text (display)
 
 import Data.Tagged (Tagged(Tagged))
 import Control.Monad (forM_)
-import Data.Maybe (fromMaybe)
-import Data.List (isPrefixOf)
 import System.FilePath ((</>),(<.>),dropFileName)
 import System.Directory (createDirectoryIfMissing)
 
@@ -97,10 +97,9 @@ fixBoolOptsForParsec bo =
   }
 
 compile :: Compiler.CompileFn
-compile builddirectory maybelanguage exts cppoptions packagename _ _ filenames = do
+compile builddirectory _ _ cppoptions packagename _ _ filenames = do
 
-    let language = fromMaybe Haskell98 maybelanguage
-        isParsec = pkgName packagename == PackageName "parsec"
+    let isParsec = pkgName packagename == PackageName "parsec"
         cppoptions' = if isParsec then fixCppOptsForParsec cppoptions else fixCppOpts cppoptions
 
     forM_ filenames (\filename -> do
@@ -108,11 +107,7 @@ compile builddirectory maybelanguage exts cppoptions packagename _ _ filenames =
         file <- readFile filename
         preprocessedfile <- runCpphs cppoptions' filename file
 
-        let modulefilepath = builddirectory </> moduleName ast <.> "hs"
+        let modulefilepath = builddirectory </> filename
 
         createDirectoryIfMissing True (dropFileName modulefilepath)
         writeFile modulefilepath preprocessedfile)
-
-moduleName :: Module SrcSpanInfo -> String
-moduleName (Module _ (Just (ModuleHead _ (ModuleName _ modulename) _ _)) _ _ _) = modulename
-moduleName m = error (show m)
