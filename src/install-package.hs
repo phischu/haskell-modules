@@ -12,11 +12,10 @@ main = do
     currentdirectory <- getCurrentDirectory
     writeFile (currentdirectory </> "packages.db") "[]"
     exitCode <- rawSystem "cabal" [
-        "install","--force-reinstalls",
-        "--gcc-option=-I/usr/lib/ghc/include",
-        "--haskell-suite","-w","haskell-modules",
+        "install","--reinstall","--force-reinstalls",
+        "--with-ghc=haskell-modules",
         "--prefix=" ++ currentdirectory,
         "--package-db=" ++ (currentdirectory </> "packages.db"),
-        "-v3",
+        "-v2",
         packagequalifier]
     print exitCode
