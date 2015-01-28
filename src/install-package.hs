@@ -17,6 +17,5 @@ main = do
         "--with-ghc=haskell-modules",
         "--prefix=" ++ currentdirectory,
         "--package-db=" ++ (currentdirectory </> "packages.db"),
-        "-v2",
         packagequalifier]
     print exitCode

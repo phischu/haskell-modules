@@ -1,5 +1,6 @@
 module Main where
 
+import Prelude hiding (readFile)
 import System.Environment (getArgs)
 import System.Directory (doesFileExist,createDirectoryIfMissing)
 import System.Process (callProcess)
@@ -7,11 +8,15 @@ import System.FilePath ((</>),(<.>),dropFileName)
 import Data.Char (isUpper)
 import Control.Monad (forM_,filterM,guard)
 import Data.List (intercalate)
+import System.IO.Strict (readFile)
 
 main :: IO ()
 main = do
+
     args <- getArgs
+
     case args of
+
         ("--make":argsAfterMake) -> do
 
             let moduleNames = filter (\arg -> isUpper (head arg)) argsAfterMake
@@ -26,27 +31,28 @@ main = do
                     ('-':'X':languageExtension) <- args
                     return languageExtension
 
-            writeFile "language_extensions" (languageExtensionsLine languageExtensions)
+                targetPath = "/home/pschuster/Projects/demo/hey"
 
             forM_ moduleNames (\moduleName -> do
 
-                let relativeModulePath = map (\c -> if c == '.' then '/' else c) moduleName <.> "hs"
-                    targetPath = "/home/pschuster/Projects/demo/hey" </> relativeModulePath
+                let relativeModuleFile = map (\c -> if c == '.' then '/' else c) moduleName <.> "hs"
+                    targetFile = targetPath </> relativeModuleFile
 
-                modulePath <- findModule searchPaths relativeModulePath
+                modulePath <- findModule searchPaths relativeModuleFile
 
-                createDirectoryIfMissing True (dropFileName targetPath)
+                createDirectoryIfMissing True (dropFileName targetFile)
 
                 putStrLn ("HASKELL MODULE: " ++ moduleName)
 
                 callProcess "ghc" (concat [
-                    ["-E","-v3","-cpp",
+                    ["-E",
                     "-optP","-P",
-                    "-optP","-include",
-                    "-optP","language_extensions",
-                    "-o",targetPath],
+                    "-o",targetFile],
                     otherArgs,
-                    [modulePath]]))
+                    [modulePath]])
+
+                preprocessedFile <- readFile targetFile
+                writeFile targetFile (languageExtensionsLine languageExtensions ++ preprocessedFile))
 
         _ -> return ()
 
@@ -75,4 +81,4 @@ type LanguageExtension = String
 
 languageExtensionsLine :: [LanguageExtension] -> String
 languageExtensionsLine languageExtensions =
-    "{-# LANGUAGE " ++ intercalate ", " languageExtensions ++ " #-}"
+    "{-# LANGUAGE " ++ intercalate ", " languageExtensions ++ " #-}\n"
