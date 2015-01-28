@@ -13,44 +13,61 @@ main = do
     args <- getArgs
     case args of
         ("--make":argsAfterMake) -> do
+
             let moduleNames = filter (\arg -> isUpper (head arg)) argsAfterMake
+
                 otherArgs = filter (\arg -> not (isUpper (head arg))) argsAfterMake
+
                 searchPaths = do
                     ('-':'i':searchPath) <- args
                     return searchPath
+
                 languageExtensions = do
                     ('-':'X':languageExtension) <- args
                     return languageExtension
+
             putStrLn "COMPILING!"
+            putStrLn (languageExtensionsLine languageExtensions)
             putStrLn (unlines moduleNames)
+
+            writeFile "language_extensions" (languageExtensionsLine languageExtensions)
+
             forM_ moduleNames (\moduleName -> do
-                writeFile "language_extensions" (languageExtensionsLine languageExtensions)
+
                 let relativeModulePath = map (\c -> if c == '.' then '/' else c) moduleName <.> "hs"
+                    targetPath = "/home/pschuster/Projects/demo/hey" </> relativeModulePath
+
                 modulePath <- findModule searchPaths relativeModulePath
-                let targetPath = "/home/pschuster/Projects/demo/hey" </> relativeModulePath
-                createDirectoryIfMissing True (
-                    dropFileName targetPath)
+
+                createDirectoryIfMissing True (dropFileName targetPath)
+
                 callProcess "ghc" (concat [
                     ["-E",
-                    "-optP","-P",
+                    "-optP", "-P",
                     "-optP","-include",
                     "-optP","language_extensions",
                     "-o",targetPath],
                     otherArgs,
                     [modulePath]]))
+
         _ -> return ()
+
     callProcess "ghc" args
+
     return ()
 
 type ModuleName = String
 
 findModule :: [FilePath] -> ModuleName -> IO FilePath
 findModule searchPaths relativeModulePath = do
+
     let potentialModuleFiles = do
             searchPath <- searchPaths
             guard (not (null searchPath))
             return (searchPath </> relativeModulePath)
+
     existingModuleFiles <- filterM doesFileExist potentialModuleFiles
+
     case existingModuleFiles of
         [] -> error "HASKELL MODULE ERROR: No module file found"
         [moduleFile] -> return moduleFile
