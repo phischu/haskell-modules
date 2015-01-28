@@ -2,10 +2,10 @@ module Main where
 
 import System.Environment (getArgs)
 import System.Directory (doesFileExist,createDirectoryIfMissing)
-import System.Process (rawSystem)
+import System.Process (callProcess)
 import System.FilePath ((</>),(<.>),dropFileName)
 import Data.Char (isUpper)
-import Control.Monad (forM,filterM,guard)
+import Control.Monad (forM_,filterM,guard)
 import Data.List (intercalate)
 
 main :: IO ()
@@ -23,22 +23,23 @@ main = do
                     return languageExtension
             putStrLn "COMPILING!"
             putStrLn (unlines moduleNames)
-            exitCodes <- forM moduleNames (\moduleName -> do
+            forM_ moduleNames (\moduleName -> do
+                writeFile "language_extensions" (languageExtensionsLine languageExtensions)
                 let relativeModulePath = map (\c -> if c == '.' then '/' else c) moduleName <.> "hs"
                 modulePath <- findModule searchPaths relativeModulePath
                 let targetPath = "/home/pschuster/Projects/demo/hey" </> relativeModulePath
-                writeFile "language_extensions" (languageExtensionsLine languageExtensions)
                 createDirectoryIfMissing True (
                     dropFileName targetPath)
-                rawSystem "ghc" (concat [
-                    ["-E","-optP","-P",
-                    "-optP","-include=language_extensions",
+                callProcess "ghc" (concat [
+                    ["-E",
+                    "-optP","-P",
+                    "-optP","-include",
+                    "-optP","language_extensions",
                     "-o",targetPath],
                     otherArgs,
                     [modulePath]]))
-            print exitCodes
         _ -> return ()
-    rawSystem "ghc" args
+    callProcess "ghc" args
     return ()
 
 type ModuleName = String
