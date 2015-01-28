@@ -26,10 +26,6 @@ main = do
                     ('-':'X':languageExtension) <- args
                     return languageExtension
 
-            putStrLn "COMPILING!"
-            putStrLn (languageExtensionsLine languageExtensions)
-            putStrLn (unlines moduleNames)
-
             writeFile "language_extensions" (languageExtensionsLine languageExtensions)
 
             forM_ moduleNames (\moduleName -> do
@@ -41,9 +37,11 @@ main = do
 
                 createDirectoryIfMissing True (dropFileName targetPath)
 
+                putStrLn ("HASKELL MODULE: " ++ moduleName)
+
                 callProcess "ghc" (concat [
-                    ["-E",
-                    "-optP", "-P",
+                    ["-E","-v3","-cpp",
+                    "-optP","-P",
                     "-optP","-include",
                     "-optP","language_extensions",
                     "-o",targetPath],
