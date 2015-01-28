@@ -13,9 +13,10 @@ main = do
     writeFile (currentdirectory </> "packages.db") "[]"
     exitCode <- rawSystem "cabal" [
         "install","--reinstall","--force-reinstalls",
+        "--disable-library-profiling",
         "--with-ghc=haskell-modules",
         "--prefix=" ++ currentdirectory,
         "--package-db=" ++ (currentdirectory </> "packages.db"),
-        "-v1",
+        "-v2",
         packagequalifier]
     print exitCode

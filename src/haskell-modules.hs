@@ -1,11 +1,12 @@
 module Main where
 
 import System.Environment (getArgs)
-import System.Directory (doesFileExist)
+import System.Directory (doesFileExist,createDirectoryIfMissing)
 import System.Process (rawSystem)
-import System.FilePath ((</>),(<.>))
+import System.FilePath ((</>),(<.>),dropFileName)
 import Data.Char (isUpper)
 import Control.Monad (forM,filterM,guard)
+import Data.List (intercalate)
 
 main :: IO ()
 main = do
@@ -17,12 +18,22 @@ main = do
                 searchPaths = do
                     ('-':'i':searchPath) <- args
                     return searchPath
+                languageExtensions = do
+                    ('-':'X':languageExtension) <- args
+                    return languageExtension
             putStrLn "COMPILING!"
             putStrLn (unlines moduleNames)
             exitCodes <- forM moduleNames (\moduleName -> do
-                modulePath <- findModule searchPaths moduleName
+                let relativeModulePath = map (\c -> if c == '.' then '/' else c) moduleName <.> "hs"
+                modulePath <- findModule searchPaths relativeModulePath
+                let targetPath = "/home/pschuster/Projects/demo/hey" </> relativeModulePath
+                writeFile "language_extensions" (languageExtensionsLine languageExtensions)
+                createDirectoryIfMissing True (
+                    dropFileName targetPath)
                 rawSystem "ghc" (concat [
-                    ["-E","-o","/home/pschuster/Projects/demo/hey/" ++ moduleName],
+                    ["-E","-optP","-P",
+                    "-optP","-include=language_extensions",
+                    "-o",targetPath],
                     otherArgs,
                     [modulePath]]))
             print exitCodes
@@ -33,14 +44,19 @@ main = do
 type ModuleName = String
 
 findModule :: [FilePath] -> ModuleName -> IO FilePath
-findModule searchPaths moduleName = do
+findModule searchPaths relativeModulePath = do
     let potentialModuleFiles = do
             searchPath <- searchPaths
             guard (not (null searchPath))
-            let modulePath = map (\c -> if c == '.' then '/' else c) moduleName
-            return (searchPath </> modulePath <.> "hs")
+            return (searchPath </> relativeModulePath)
     existingModuleFiles <- filterM doesFileExist potentialModuleFiles
     case existingModuleFiles of
         [] -> error "HASKELL MODULE ERROR: No module file found"
         [moduleFile] -> return moduleFile
         moduleFiles -> error ("HASKELL MODULE ERROR: Multiple module files found: " ++ show moduleFiles)
+
+type LanguageExtension = String
+
+languageExtensionsLine :: [LanguageExtension] -> String
+languageExtensionsLine languageExtensions =
+    "{-# LANGUAGE " ++ intercalate ", " languageExtensions ++ " #-}"
