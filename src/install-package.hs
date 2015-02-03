@@ -12,10 +12,9 @@ main = do
     currentdirectory <- getCurrentDirectory
     writeFile (currentdirectory </> "packages.db") "[]"
     exitCode <- rawSystem "cabal" [
-        "install","--reinstall","--force-reinstalls",
+        "install",
+        "--ghc-pkg-options=--global-package-db=/home/pschuster/Projects/haskell-modules/installed_packages",
         "--disable-library-profiling",
         "--with-ghc=haskell-modules",
-        "--prefix=" ++ currentdirectory,
-        "--package-db=" ++ (currentdirectory </> "packages.db"),
         packagequalifier]
     print exitCode
