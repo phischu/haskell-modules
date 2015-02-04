@@ -13,6 +13,7 @@ main = do
     writeFile (currentdirectory </> "packages.db") "[]"
     exitCode <- rawSystem "cabal" [
         "install",
+        "-v2",
         "--ghc-pkg-options=--global-package-db=/home/pschuster/Projects/haskell-modules/installed_packages",
         "--disable-library-profiling",
         "--with-ghc=haskell-modules",

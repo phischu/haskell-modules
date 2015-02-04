@@ -2,18 +2,21 @@ module Main where
 
 import Prelude hiding (readFile)
 import System.Environment (getArgs)
-import System.Directory (doesFileExist,createDirectoryIfMissing)
+import System.Directory (
+    doesFileExist,createDirectoryIfMissing,getDirectoryContents)
 import System.Process (callProcess)
-import System.FilePath ((</>),(<.>),dropFileName)
+import System.FilePath ((</>),(<.>),dropFileName,takeFileName)
 import Data.Char (isUpper)
 import Control.Monad (forM_,filterM,guard)
-import Data.List (intercalate)
+import Data.List (intercalate,isSuffixOf)
 import System.IO.Strict (readFile)
 
 main :: IO ()
 main = do
 
     args <- getArgs
+
+    let targetPath = "/home/pschuster/Projects/demo/hey"
 
     case args of
 
@@ -31,28 +34,65 @@ main = do
                     ('-':'X':languageExtension) <- args
                     return languageExtension
 
-                targetPath = "/home/pschuster/Projects/demo/hey"
-
             forM_ moduleNames (\moduleName -> do
 
                 let relativeModuleFile = map (\c -> if c == '.' then '/' else c) moduleName <.> "hs"
-                    targetFile = targetPath </> relativeModuleFile
+                    targetFilePath = targetPath </> relativeModuleFile
 
                 modulePath <- findModule searchPaths relativeModuleFile
 
-                createDirectoryIfMissing True (dropFileName targetFile)
+                createDirectoryIfMissing True (dropFileName targetFilePath)
 
                 putStrLn ("HASKELL MODULE: " ++ moduleName)
 
                 callProcess "ghc" (concat [
                     ["-E",
                     "-optP","-P",
-                    "-o",targetFile],
+                    "-o",targetFilePath],
                     otherArgs,
                     [modulePath]])
 
-                preprocessedFile <- readFile targetFile
-                writeFile targetFile (languageExtensionsLine languageExtensions ++ preprocessedFile))
+                preprocessedFile <- readFile targetFilePath
+                writeFile targetFilePath (languageExtensionsLine languageExtensions ++ preprocessedFile))
+
+        ("-c":argsAfterC) -> do
+
+
+            let cFilePaths = filter (".c" `isSuffixOf`) argsAfterC
+
+            forM_ cFilePaths (\cFilePath -> do
+
+                let cFileName = takeFileName cFilePath
+                    targetFilePath = targetPath </> "cbits" </> cFileName
+
+                createDirectoryIfMissing True (dropFileName targetFilePath)
+
+                putStrLn ("C FILE: " ++ cFileName)
+
+                cFile <- readFile cFilePath
+                writeFile targetFilePath cFile)
+
+
+            let includeFolders = do
+                    ('-':'I':includeFolder) <- args
+                    return includeFolder
+
+            forM_ includeFolders (\includeFolder -> do
+
+                includeFolderContents <- getDirectoryContents includeFolder
+
+                let cHeaderFileNames = filter (".h" `isSuffixOf`) includeFolderContents
+
+                forM_ cHeaderFileNames (\cHeaderFileName -> do
+
+                    let targetFilePath = targetPath </> "include" </> cHeaderFileName
+
+                    createDirectoryIfMissing True (dropFileName targetFilePath)
+
+                    putStrLn ("C HEADER FILE: " ++ cHeaderFileName)
+
+                    cHeaderFile <- readFile (includeFolder </> cHeaderFileName)
+                    writeFile targetFilePath cHeaderFile))
 
         _ -> return ()
 
