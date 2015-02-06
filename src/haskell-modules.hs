@@ -36,10 +36,9 @@ main = do
 
             forM_ moduleNames (\moduleName -> do
 
-                let relativeModuleFile = map (\c -> if c == '.' then '/' else c) moduleName <.> "hs"
-                    targetFilePath = targetPath </> relativeModuleFile
+                moduleFilePath <- findModule searchPaths moduleName
 
-                modulePath <- findModule searchPaths relativeModuleFile
+                let targetFilePath = targetPath </> modulePath moduleName "hs"
 
                 createDirectoryIfMissing True (dropFileName targetFilePath)
 
@@ -50,7 +49,7 @@ main = do
                     "-optP","-P",
                     "-o",targetFilePath],
                     otherArgs,
-                    [modulePath]])
+                    [moduleFilePath]])
 
                 preprocessedFile <- readFile targetFilePath
                 writeFile targetFilePath (languageExtensionsLine languageExtensions ++ preprocessedFile))
@@ -101,21 +100,27 @@ main = do
     return ()
 
 type ModuleName = String
+type Suffix = String
 
 findModule :: [FilePath] -> ModuleName -> IO FilePath
-findModule searchPaths relativeModulePath = do
+findModule searchPaths moduleName = do
 
     let potentialModuleFiles = do
+            suffix <- ["hs","lhs"]
+            let relativeModuleFile = modulePath moduleName suffix
             searchPath <- searchPaths
             guard (not (null searchPath))
-            return (searchPath </> relativeModulePath)
+            return (searchPath </> relativeModuleFile)
 
     existingModuleFiles <- filterM doesFileExist potentialModuleFiles
 
     case existingModuleFiles of
-        [] -> error "HASKELL MODULE ERROR: No module file found"
+        [] -> error ("HASKELL MODULE ERROR: No module file found " ++ moduleName)
         [moduleFile] -> return moduleFile
         moduleFiles -> error ("HASKELL MODULE ERROR: Multiple module files found: " ++ show moduleFiles)
+
+modulePath :: ModuleName -> Suffix -> FilePath
+modulePath moduleName suffix = map (\c -> if c == '.' then '/' else c) moduleName <.> suffix
 
 type LanguageExtension = String
 
