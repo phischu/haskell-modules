@@ -47,6 +47,7 @@ main = do
                 callProcess "ghc" (concat [
                     ["-E",
                     "-optP","-P",
+                    "-optL","-P",
                     "-o",targetFilePath],
                     otherArgs,
                     [moduleFilePath]])
