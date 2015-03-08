@@ -32,7 +32,7 @@ main = do
 
         ("--make":argsAfterMake) -> do
 
-            let moduleNames = filter (\arg -> isUpper (head arg)) argsAfterMake
+            let moduleNames = filter (\arg -> isUpper (head arg) && not ('-' `elem` arg)) argsAfterMake
 
                 otherArgs = filter (\arg -> not (isUpper (head arg))) argsAfterMake
 
