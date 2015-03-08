@@ -8,15 +8,25 @@ import System.Process (callProcess)
 import System.FilePath ((</>),(<.>),dropFileName,takeFileName)
 import Data.Char (isUpper)
 import Control.Monad (forM_,filterM,guard)
-import Data.List (intercalate,isSuffixOf)
+import Data.List (intercalate,isSuffixOf,isPrefixOf,stripPrefix)
+import Data.Maybe (maybeToList)
 import System.IO.Strict (readFile)
 
 main :: IO ()
 main = do
 
-    args <- getArgs
+    argsWithTargetPath <- getArgs
 
-    let targetPath = "/home/pschuster/Projects/demo/hey"
+    let args = do
+            arg <- argsWithTargetPath
+            guard (not (targetPathPrefix `isPrefixOf` arg))
+            return arg
+        targetPaths = do
+            arg <- argsWithTargetPath
+            maybeToList (stripPrefix targetPathPrefix arg)
+        targetPath = case targetPaths of
+            [t] -> t
+            _ -> error "Not exactly one target path."
 
     case args of
 
@@ -128,3 +138,6 @@ type LanguageExtension = String
 languageExtensionsLine :: [LanguageExtension] -> String
 languageExtensionsLine languageExtensions =
     "{-# LANGUAGE " ++ intercalate ", " languageExtensions ++ " #-}\n"
+
+targetPathPrefix :: FilePath
+targetPathPrefix = "--haskell-modules-target-path="
