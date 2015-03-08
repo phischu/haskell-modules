@@ -4,17 +4,17 @@ module Main where
 import Prelude hiding (FilePath)
 
 import Turtle (
-    Text,proc,empty,mkdir,cd,rmtree,
+    Text,proc,empty,mkdir,cd,
     realpath,(<>),toText,FilePath,fromText)
 
 
 main :: IO ()
 main = do
 
-    packageDbPath <- realpath "installed_packages"
+    packageDbPath <- realpath "builtin_packages"
     haskellModulesPath <- realpath ".cabal-sandbox/bin/haskell-modules"
 
-    rmtree "packages"
+    proc "rm" ["-r", "-f", "packages"] empty
     mkdir "packages"
     cd "packages"
 
