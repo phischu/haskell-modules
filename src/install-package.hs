@@ -5,7 +5,7 @@ import Prelude hiding (FilePath)
 
 import Turtle (
     Text,proc,empty,mkdir,cd,
-    realpath,(<>),toText,FilePath,fromText)
+    realpath,(<>),toText,FilePath)
 
 
 main :: IO ()
@@ -18,23 +18,25 @@ main = do
     mkdir "packages"
     cd "packages"
 
-    mkdir (fromText packageName)
-    targetPath <- realpath (fromText packageName)
+    mkdir "modules"
+    targetPath <- realpath "modules"
 
     proc "cabal" ["sandbox","init"] empty
-    proc "cabal" [
+
+    proc "cabal" ([
         "install",
+        "-v2",
         "--ghc-pkg-options=--global-package-db=" <> filePathToText packageDbPath,
         "--disable-library-profiling",
         "--with-ghc=" <> filePathToText haskellModulesPath,
-        "--ghc-option=--haskell-modules-target-path=" <> filePathToText targetPath,
-        packageName]
+        "--ghc-option=--haskell-modules-target-path=" <> filePathToText targetPath]
+        ++ packageNames)
         empty
 
     return ()
 
-packageName :: Text
-packageName = "containers"
+packageNames :: [Text]
+packageNames = ["containers"]
 
 filePathToText :: FilePath -> Text
 filePathToText = either id id . toText
