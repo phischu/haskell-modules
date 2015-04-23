@@ -30,6 +30,8 @@ executable install-package
                        directory >=1.2.1.0 && <1.3,
                        filepath >=1.3 && <1.4,
                        turtle >=1.0.2 && <1.1,
+                       foldl >=1.0.7 && <1.1,
+                       text >=1.2.0.3 && <1.3,
                        system-filepath >=0.4.13.2 && <0.5
   hs-source-dirs:      src
   default-language:    Haskell2010

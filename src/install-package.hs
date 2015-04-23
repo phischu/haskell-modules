@@ -4,12 +4,33 @@ module Main where
 import Prelude hiding (FilePath)
 
 import Turtle (
-    Text,proc,empty,mkdir,cd,
-    realpath,(<>),toText,FilePath)
+    Text,proc,empty,mkdir,cd,inproc,find,cp,
+    has,text,rmdir,
+    realpath,(<>),toText,FilePath,filename,
+    fold,fromString,(</>))
+
+import Control.Monad (forM)
+import qualified Control.Foldl as Fold (head)
+import Data.Text (unpack)
 
 
 main :: IO ()
 main = do
+
+    rmdir "builtin_packages"
+    mkdir "builtin_packages"
+    Just ghcLibDir <- fold (inproc "ghc" ["--print-libdir"] empty) Fold.head
+
+    let ghcGlobalPackagesPath = textToFilePath ghcLibDir </> "package.conf.d"
+
+    forM ["base","builtin_rts","ghc-prim","integer-gmp"] (\builtinPackageName -> do
+        Just builtinPackagePath <- fold (
+            find
+                (has (text builtinPackageName))
+                ghcGlobalPackagesPath)
+            Fold.head
+        print builtinPackagePath
+        cp builtinPackagePath ("builtin_packages/" <> filename builtinPackagePath))
 
     packageDbPath <- realpath "builtin_packages"
     haskellModulesPath <- realpath ".cabal-sandbox/bin/haskell-modules"
@@ -36,7 +57,10 @@ main = do
     return ()
 
 packageNames :: [Text]
-packageNames = ["containers"]
+packageNames = ["vector"]
 
 filePathToText :: FilePath -> Text
 filePathToText = either id id . toText
+
+textToFilePath :: Text -> FilePath
+textToFilePath = fromString . unpack
