@@ -5,7 +5,7 @@ import Prelude hiding (FilePath)
 
 import Turtle (
     Text,proc,empty,mkdir,cd,inproc,find,cp,
-    has,text,rmdir,
+    has,text,rmtree,
     realpath,(<>),toText,FilePath,filename,
     fold,fromString,(</>))
 
@@ -17,7 +17,7 @@ import Data.Text (unpack)
 main :: IO ()
 main = do
 
-    rmdir "builtin_packages"
+    proc "rm" ["-r", "-f", "builtin_packages"] empty
     mkdir "builtin_packages"
     Just ghcLibDir <- fold (inproc "ghc" ["--print-libdir"] empty) Fold.head
 
@@ -29,7 +29,6 @@ main = do
                 (has (text builtinPackageName))
                 ghcGlobalPackagesPath)
             Fold.head
-        print builtinPackagePath
         cp builtinPackagePath ("builtin_packages/" <> filename builtinPackagePath))
 
     packageDbPath <- realpath "builtin_packages"
