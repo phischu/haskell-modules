@@ -7,11 +7,10 @@ import Turtle (
     Text,proc,empty,mkdir,cd,inproc,find,cp,
     has,text,rmtree,
     realpath,(<>),toText,FilePath,filename,
-    fold,fromString,(</>))
+    fold,Line,lineToText,fromText,(</>))
 
 import Control.Monad (forM)
 import qualified Control.Foldl as Fold (head)
-import Data.Text (unpack)
 
 
 main :: IO ()
@@ -21,9 +20,9 @@ main = do
     mkdir "builtin_packages"
     Just ghcLibDir <- fold (inproc "ghc" ["--print-libdir"] empty) Fold.head
 
-    let ghcGlobalPackagesPath = textToFilePath ghcLibDir </> "package.conf.d"
+    let ghcGlobalPackagesPath = lineToFilePath ghcLibDir </> "package.conf.d"
 
-    forM ["base","builtin_rts","ghc-prim","integer-gmp"] (\builtinPackageName -> do
+    forM ["base","rts","ghc-prim","integer-gmp"] (\builtinPackageName -> do
         Just builtinPackagePath <- fold (
             find
                 (has (text builtinPackageName))
@@ -61,5 +60,5 @@ packageNames = ["vector"]
 filePathToText :: FilePath -> Text
 filePathToText = either id id . toText
 
-textToFilePath :: Text -> FilePath
-textToFilePath = fromString . unpack
+lineToFilePath :: Line -> FilePath
+lineToFilePath = fromText . lineToText
