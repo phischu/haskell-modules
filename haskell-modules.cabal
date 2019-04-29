@@ -14,8 +14,8 @@ cabal-version:       >=1.10
 
 executable haskell-modules
   main-is:             haskell-modules.hs
-  build-depends:       base >=4.6 && <4.10,
-                       process >=1.4 && <1.5,
+  build-depends:       base >=4.6 && <4.13,
+                       process >=1.6.5 && <1.7,
                        directory >=1.3 && <1.4,
                        filepath >=1.4 && <1.5,
                        strict >=0.3.2 && <0.4
@@ -25,12 +25,12 @@ executable haskell-modules
 
 executable install-package
   main-is:             install-package.hs
-  build-depends:       base >=4.6 && <4.10,
-                       process >=1.4 && <1.5,
+  build-depends:       base >=4.6 && <4.13,
+                       process >=1.6.5 && <1.7,
                        directory >=1.3 && <1.4,
                        filepath >=1.4 && <1.5,
-                       turtle >=1.0.2 && <1.4,
-                       foldl >=1.0.7 && <1.4,
+                       turtle >=1.5.14 && <1.6,
+                       foldl >=1.4.5 && <1.5,
                        text >=1.2.0.3 && <1.3,
                        system-filepath >=0.4.13.2 && <0.5
   hs-source-dirs:      src
